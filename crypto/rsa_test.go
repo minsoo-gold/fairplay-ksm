@@ -1,4 +1,4 @@
-package rsa
+package crypto
 
 import (
 	"testing"
@@ -51,27 +51,6 @@ func TestEncryptAndDecrypt(t *testing.T) {
 	assert.NoError(t, err)
 
 	de, err := Decrypt(privateKey, en)
-	assert.NoError(t, err)
-
-	assert.Equal(t, origData, de)
-}
-
-func TestEncryptAndDecryptFromFile(t *testing.T) {
-	origData := []byte("plainText")
-
-	pemReader := FileReader{FileName: "../../testdata/Development Credentials/dev_private_key.pem"}
-	derReader := FileReader{FileName: "../../testdata/Development Credentials/certificate.pem"}
-
-	der, err := derReader.ReadPem()
-	assert.NoError(t, err)
-
-	pem, err := pemReader.ReadPem()
-	assert.NoError(t, err)
-
-	en, err := EncryptByCert(der, origData)
-	assert.NoError(t, err)
-
-	de, err := Decrypt(pem, en)
 	assert.NoError(t, err)
 
 	assert.Equal(t, origData, de)

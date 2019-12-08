@@ -1,4 +1,4 @@
-package rsa
+package crypto
 
 import (
 	"crypto/rand"
@@ -9,6 +9,12 @@ import (
 	"errors"
 	"fmt"
 )
+
+type RSACrypto interface {
+	Encrypt()
+	EncryptByCert()
+	Decrypt()
+}
 
 // Encrypt encrypts the given message with RSA-OAEP.
 // Need a DER encoded public key, These values are

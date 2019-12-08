@@ -1,7 +1,6 @@
 package d
 
 import (
-	"encoding/hex"
 	"errors"
 )
 
@@ -23,11 +22,11 @@ func (d AppleD) Compute(R2 []byte, ask []byte) ([]byte, error) {
 		return nil, errors.New("R2 block doesn't exist.")
 	}
 
-	b, err := hex.DecodeString("d87ce7a26081de2e8eb8acef3a6dc179") //Apple provided
+	// b, err := hex.DecodeString("d87ce7a26081de2e8eb8acef3a6dc179") //Apple provided
 
-	if len(b) != 16 {
+	if len(ask) != 16 {
 		return nil, errors.New("ask key length doesn't equal 16")
 	}
 
-	return b, err
+	return ask, nil
 }
