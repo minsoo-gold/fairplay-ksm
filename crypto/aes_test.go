@@ -17,7 +17,7 @@ func TestCBCEncrypt(t *testing.T) {
 	ivByteAry, _ := hex.DecodeString(iv)
 	plainText := []byte("6368616e676520746869732070617373")
 
-	crypted, err := CBCEncrypt(keyByteAry, ivByteAry, plainText)
+	crypted, err := AESCBCEncrypt(keyByteAry, ivByteAry, plainText)
 
 	assert.NoError(err)
 	assert.Equal("AAAAAAAAAAAAAAAAAAAAAH63109cCQq85FYwIRciIck+HN+B5yJyFueE8ZN1zLI4", base64.StdEncoding.EncodeToString(crypted))
@@ -37,7 +37,7 @@ func TestCBCDecrypt(t *testing.T) {
 	en, err := base64.StdEncoding.DecodeString(enBase64Str)
 	assert.NoError(err)
 
-	plainText, err := CBCDecrypt(keyByteAry, ivByteAry, en)
+	plainText, err := AESCBCDecrypt(keyByteAry, ivByteAry, en)
 
 	assert.NoError(err)
 	assert.Equal("6368616e676520746869732070617373", string(plainText))

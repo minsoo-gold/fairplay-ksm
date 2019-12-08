@@ -45,13 +45,14 @@ IMYU4NZSWhf5z+wYpjtzYxdoqynjvihqFdGqYDC2drzpLLhaCXZhZUq2D1mXoQaY
 -----END CERTIFICATE-----`)
 
 func TestEncryptAndDecrypt(t *testing.T) {
+	assert := assert.New(t)
 	origData := []byte("plainText")
 
-	en, err := EncryptByCert(cert, origData)
-	assert.NoError(t, err)
+	en, err := RSAEncryptByCert(cert, origData)
+	assert.NoError(err)
 
-	de, err := Decrypt(privateKey, en)
-	assert.NoError(t, err)
+	de, err := RSADecryptByKey(privateKey, en)
+	assert.NoError(err)
 
-	assert.Equal(t, origData, de)
+	assert.Equal(origData, de)
 }

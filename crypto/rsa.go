@@ -19,7 +19,7 @@ type RSACrypto interface {
 // Encrypt encrypts the given message with RSA-OAEP.
 // Need a DER encoded public key, These values are
 // typically found in PEM blocks with "BEGIN PUBLIC KEY".
-func Encrypt(publicKey, origData []byte) ([]byte, error) {
+func RSAEncryptByKey(publicKey, origData []byte) ([]byte, error) {
 	block, _ := pem.Decode(publicKey)
 
 	if block == nil {
@@ -39,7 +39,7 @@ func Encrypt(publicKey, origData []byte) ([]byte, error) {
 	return rsa.EncryptOAEP(sha256.New(), rand.Reader, pub, origData, nil)
 }
 
-func EncryptByCert(pemCertificate, origData []byte) ([]byte, error) {
+func RSAEncryptByCert(pemCertificate, origData []byte) ([]byte, error) {
 	block, _ := pem.Decode(pemCertificate)
 	if block == nil {
 		panic("failed to parse certificate PEM")
@@ -54,7 +54,7 @@ func EncryptByCert(pemCertificate, origData []byte) ([]byte, error) {
 	return rsa.EncryptOAEP(sha256.New(), rand.Reader, pub, origData, nil)
 }
 
-func Decrypt(privateKey, ciphertext []byte) ([]byte, error) {
+func RSADecryptByKey(privateKey, ciphertext []byte) ([]byte, error) {
 	fmt.Println(len(ciphertext))
 	block, _ := pem.Decode(privateKey)
 	if block == nil {

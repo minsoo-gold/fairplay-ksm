@@ -5,16 +5,8 @@ import (
 	"crypto/cipher"
 )
 
-// AESCrypto is the interface included the CBC Encrypt, CBC Decrypt and ECB Encrypt.
-type AESCrypto interface {
-	CBCEncrypt()
-	CBCDecrypt()
-	ECBEncrypt()
-	ECBDecrypt()
-}
-
 // CBCEncrypt is given key, iv to encrypt the plainText in AES CBC way.
-func CBCEncrypt(key, iv, plainText []byte) ([]byte, error) {
+func AESCBCEncrypt(key, iv, plainText []byte) ([]byte, error) {
 
 	if len(plainText)%aes.BlockSize != 0 {
 		panic("plaintext is not a multiple of the block size")
@@ -35,7 +27,7 @@ func CBCEncrypt(key, iv, plainText []byte) ([]byte, error) {
 }
 
 // CBCDecrypt is given key, iv to decrypt the cipherText in AES CBC way.
-func CBCDecrypt(key, iv, cipherText []byte) ([]byte, error) {
+func AESCBCDecrypt(key, iv, cipherText []byte) ([]byte, error) {
 
 	if len(cipherText) < aes.BlockSize {
 		panic("ciphertext too short")
@@ -58,7 +50,7 @@ func CBCDecrypt(key, iv, cipherText []byte) ([]byte, error) {
 }
 
 // ECBEncrypt is given key, iv to encrypt the plainText in AES ECB way.
-func ECBEncrypt(key, plainText []byte) ([]byte, error) {
+func AESECBEncrypt(key, plainText []byte) ([]byte, error) {
 	if len(plainText)%aes.BlockSize != 0 {
 		panic("Need a multiple of the blocksize")
 	}
@@ -77,7 +69,7 @@ func ECBEncrypt(key, plainText []byte) ([]byte, error) {
 }
 
 // ECBDecrypt is given key, iv to decrypt the cipherText in AES ECB way.
-func ECBDecrypt(key, cipherText []byte) ([]byte, error) {
+func AESECBDecrypt(key, cipherText []byte) ([]byte, error) {
 	if len(cipherText)%aes.BlockSize != 0 {
 		panic("crypto/cipher: input not full blocks")
 	}
