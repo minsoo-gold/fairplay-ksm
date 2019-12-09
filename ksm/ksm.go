@@ -2,6 +2,7 @@ package ksm
 
 import (
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/sha1"
 	"encoding/binary"
 	"encoding/hex"
@@ -10,9 +11,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/easonlin404/ksm/crypto/aes"
-	"github.com/easonlin404/ksm/crypto/rsa"
-	"github.com/easonlin404/ksm/d"
+	"github.com/Cooomma/ksm/crypto"
 )
 
 // SPCContainer represents a container to contain SPC message filed.
@@ -60,11 +59,11 @@ func (c *CKCContainer) Serialize() []byte {
 
 // Ksm represents a ksm object.
 type Ksm struct {
-	Pub       string
-	Pri       string
-	Rck       ContentKey
-	Ask       []byte
-	DFunction d.D
+	Pub *rsa.PublicKey
+	Pri *rsa.PrivateKey
+	Rck ContentKey
+	Ask []byte
+	D   DFunction
 }
 
 // GenCKC computes the incoming server playback context (SPC message) returned to client by the SKDServer library.
@@ -78,7 +77,7 @@ func (k *Ksm) GenCKC(playback []byte) ([]byte, error) {
 	skr1 := parseSKR1(ttlvs[tagSessionKeyR1])
 
 	r2 := ttlvs[tagR2]
-	dask, err := k.DFunction.Compute(r2.Value, k.Ask)
+	dask, err := k.D.Compute(r2.Value, k.Ask)
 
 	if err != nil {
 		return nil, err
@@ -229,7 +228,7 @@ func getEncryptedArSeed(r1 []byte, arSeed []byte) ([]byte, error) {
 	h.Write(r1)
 	arKey := h.Sum(nil)[0:16]
 
-	return aes.EncryptWithECB(arKey, arSeed)
+	return crypto.AESECBEncrypt(arKey, arSeed)
 }
 
 func generateRandomIv() CkcDataIv {
@@ -243,7 +242,7 @@ func generateRandomIv() CkcDataIv {
 }
 
 func encryptCkcPayload(encryptedArSeed []byte, iv CkcDataIv, ckcPayload []byte) (*CkcEncryptedPayload, error) {
-	encryped, err := aes.Encrypt(encryptedArSeed, iv.IV, ckcPayload)
+	encryped, err := crypto.AESCBCEncrypt(encryptedArSeed, iv.IV, ckcPayload)
 	if err != nil {
 		return nil, err
 	}
@@ -281,13 +280,14 @@ func encryptCK(assetID []byte, ck ContentKey, sk []byte) ([]byte, []byte, error)
 	var iv []byte
 	iv = make([]byte, len(contentKey), len(contentKey))
 
-	enCk, err := aes.Encrypt(sk, iv, contentKey)
-	return enCk, contentIv, err
+	//enCk, err := aes.Encrypt(sk, iv, contentKey)
+	enCK, err := crypto.AESCBCEncrypt(sk, iv, contentKey)
+	return enCK, contentIv, err
 }
 
 // ParseSPCV1 parses playback, public and private key pairs to new a SPCContainer instance.
 // ParseSPCV1 returns an error if playback can't be parsed.
-func ParseSPCV1(playback []byte, pub, pri string) (*SPCContainer, error) {
+func ParseSPCV1(playback []byte, pub *rsa.PublicKey, pri *rsa.PrivateKey) (*SPCContainer, error) {
 	spcContainer := parseSPCContainer(playback)
 
 	spck, err := decryptSPCK(pub, pri, spcContainer.EncryptedAesKey)
@@ -295,14 +295,16 @@ func ParseSPCV1(playback []byte, pub, pri string) (*SPCContainer, error) {
 		return nil, err
 	}
 
-	spcPayloadRow, err := decryptSPCpayload(spcContainer, spck)
+	printDebugSPC(spcContainer)
+
+	spcPayload, err := crypto.AESCBCDecrypt(spck, spcContainer.AesKeyIV, spcContainer.SPCPlayload)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("=== SPC PayloadRow ===")
+	fmt.Println(hex.EncodeToString(spcPayload))
 
-	printDebugSPC(spcContainer)
-
-	spcContainer.TTLVS = parseTLLVs(spcPayloadRow)
+	spcContainer.TTLVS = parseTLLVs(spcPayload)
 
 	return spcContainer, nil
 }
@@ -331,24 +333,23 @@ func fillCKCContainer(CkcEncryptedPayload []byte, iv CkcDataIv) []byte {
 	return ckcContaniner.Serialize()
 }
 
-func parseTLLVs(spcpayload []byte) map[uint64]TLLVBlock {
+func parseTLLVs(spcPayload []byte) map[uint64]TLLVBlock {
 	var m map[uint64]TLLVBlock
 	m = make(map[uint64]TLLVBlock)
 
-	for currentOffset := 0; currentOffset < len(spcpayload); {
+	for currentOffset := 0; currentOffset < len(spcPayload); {
 
-		tag := binary.BigEndian.Uint64(spcpayload[currentOffset : currentOffset+fieldTagLength])
+		tag := binary.BigEndian.Uint64(spcPayload[currentOffset : currentOffset+fieldTagLength])
 		currentOffset += fieldTagLength
 
-		blockLength := binary.BigEndian.Uint32(spcpayload[currentOffset : currentOffset+fieldBlockLength])
+		blockLength := binary.BigEndian.Uint32(spcPayload[currentOffset : currentOffset+fieldBlockLength])
 		currentOffset += fieldBlockLength
 
-		valueLength := binary.BigEndian.Uint32(spcpayload[currentOffset : currentOffset+fieldValueLength])
+		valueLength := binary.BigEndian.Uint32(spcPayload[currentOffset : currentOffset+fieldValueLength])
 		currentOffset += fieldValueLength
-
 		//paddingSize := blockLength - valueLength
 
-		value := spcpayload[currentOffset : currentOffset+int(valueLength)]
+		value := spcPayload[currentOffset : currentOffset+int(valueLength)]
 
 		var skip bool
 		switch tag {
@@ -434,7 +435,8 @@ func decryptSKR1Payload(skr1 SKR1TLLVBlock, dask []byte) (*DecryptedSKR1Payload,
 		return nil, errors.New("decryptSKR1 doesn't match tagSessionKeyR1 tag")
 	}
 
-	decryptPayloadRow, err := aes.Decrypt(dask, skr1.IV, skr1.Payload)
+	// decryptPayloadRow, err := aes.Decrypt(dask, skr1.IV, skr1.Payload)
+	decryptPayloadRow, err := crypto.AESCBCDecrypt(dask, skr1.IV, skr1.Payload)
 	if err != nil {
 		return nil, err
 	}
@@ -467,12 +469,12 @@ func printDebugSPC(spcContainer *SPCContainer) {
 
 // SPCK = RSA_OAEP d([SPCK])Prv where
 // [SPCK] represents the value of SPC message bytes 24-151. Prv represents the server's private key.
-func decryptSPCK(pub, pri string, enSpck []byte) ([]byte, error) {
+func decryptSPCK(pub *rsa.PublicKey, pri *rsa.PrivateKey, enSpck []byte) ([]byte, error) {
 	if len(enSpck) != 128 {
 		return nil, errors.New("Wrong [SPCK] length, must be 128")
 	}
-	spck, err := rsa.OAEPPDecrypt(pub, pri, enSpck)
-
+	// spck, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, pri, enSpck, nil)
+	spck, err := crypto.OAEPDecrypt(pub, pri, enSpck)
 	if err != nil {
 		// create a slice for the errors
 		var errstrings []string
@@ -489,6 +491,7 @@ func decryptSPCK(pub, pri string, enSpck []byte) ([]byte, error) {
 // SPC message bytes 172-175).
 // IV represents the value of SPC message bytes 8-23.
 func decryptSPCpayload(spcContainer *SPCContainer, spck []byte) ([]byte, error) {
-	spcPayload, err := aes.Decrypt(spck, spcContainer.AesKeyIV, spcContainer.SPCPlayload)
+	// spcPayload, err := aes.Decrypt(spck, spcContainer.AesKeyIV, spcContainer.SPCPlayload)
+	spcPayload, err := crypto.AESCBCDecrypt(spck, spcContainer.AesKeyIV, spcContainer.SPCPlayload)
 	return spcPayload, err
 }
