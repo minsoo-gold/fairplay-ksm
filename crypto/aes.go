@@ -1,26 +1,34 @@
 package crypto
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 )
 
+func pkcs5Padding(ciphertext []byte, blockSize int) []byte {
+	padding := blockSize - len(ciphertext)%blockSize
+	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
+	return append(ciphertext, padtext...)
+}
+
+func pkcs5UnPadding(origData []byte) []byte {
+	padding := origData[len(origData)-1]
+	return origData[:len(origData)-int(padding)]
+}
+
 // AESCBCEncrypt is given key, iv to encrypt the plainText in AES CBC way.
 func AESCBCEncrypt(key, iv, plainText []byte) ([]byte, error) {
-
-	if len(plainText)%aes.BlockSize != 0 {
-		panic("plaintext is not a multiple of the block size")
-	}
-
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		panic(err)
 	}
 
-	ciphertext := make([]byte, aes.BlockSize+len(plainText))
-
 	mode := cipher.NewCBCEncrypter(block, iv)
-	mode.CryptBlocks(ciphertext[aes.BlockSize:], plainText)
+
+	content := pkcs5Padding(plainText, block.BlockSize())
+	ciphertext := make([]byte, len(content))
+	mode.CryptBlocks(ciphertext, content)
 
 	return ciphertext, nil
 
@@ -29,8 +37,8 @@ func AESCBCEncrypt(key, iv, plainText []byte) ([]byte, error) {
 // AESCBCDecrypt is given key, iv to decrypt the cipherText in AES CBC way.
 func AESCBCDecrypt(key, iv, cipherText []byte) ([]byte, error) {
 
-	if len(cipherText) < aes.BlockSize {
-		panic("ciphertext too short")
+	if len(cipherText) == 0 {
+		panic("ciphertext can't be plain")
 	}
 
 	block, err := aes.NewCipher(key)
@@ -38,15 +46,11 @@ func AESCBCDecrypt(key, iv, cipherText []byte) ([]byte, error) {
 		panic(err)
 	}
 
-	cipherText = cipherText[aes.BlockSize:]
-
-	if len(cipherText)%aes.BlockSize != 0 {
-		panic("cipherText is not a multiple of the block size")
-	}
-
 	mode := cipher.NewCBCDecrypter(block, iv)
-	mode.CryptBlocks(cipherText, cipherText)
-	return cipherText, nil
+	plainText := make([]byte, len(cipherText))
+	mode.CryptBlocks(plainText, cipherText)
+
+	return pkcs5UnPadding(plainText), nil
 }
 
 // AESECBEncrypt is given key, iv to encrypt the plainText in AES ECB way.
@@ -58,6 +62,7 @@ func AESECBEncrypt(key, plainText []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	cipherText := make([]byte, len(plainText))
 
 	for len(plainText) > 0 {
