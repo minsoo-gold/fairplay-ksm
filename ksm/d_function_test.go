@@ -1,4 +1,4 @@
-package d
+package ksm
 
 import (
 	"testing"
@@ -78,8 +78,8 @@ var testsData = []testHashValue{
 	},
 }
 
-func TestCP_D_Function_ComputeHashValue(t *testing.T) {
-	d := CP_D_Function{}
+func TestDFunctionComputeHashValue(t *testing.T) {
+	d := DFunction{}
 	for _, test := range testsData {
 
 		actualOut, err := d.ComputeHashValue(test.in)

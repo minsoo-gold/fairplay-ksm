@@ -1,25 +1,25 @@
-package d
+package ksm
 
 import (
 	"crypto/sha1"
 	"errors"
 
-	"github.com/easonlin404/ksm/crypto/aes"
+	"github.com/Cooomma/ksm/crypto"
 )
 
 const PRIME = uint32(813416437)
 const NB_RD = 16
 
-type CP_D_Function struct {
+type DFunction struct {
 }
 
-func (d CP_D_Function) Compute(R2 []byte, ask []byte) ([]byte, error) {
-	hh, err := d.ComputeHashValue(R2)
+func (d DFunction) Compute(R2 []byte, ask []byte) ([]byte, error) {
+	hashValue, err := d.ComputeHashValue(R2)
 	if err != nil {
 		return nil, err
 	}
 
-	DASk, err := aes.EncryptWithECB(ask, hh)
+	DASk, err := crypto.AESECBEncrypt(ask, hashValue)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func (d CP_D_Function) Compute(R2 []byte, ask []byte) ([]byte, error) {
 	return DASk, nil
 }
 
-func (d CP_D_Function) ComputeHashValue(R2 []byte) ([]byte, error) {
+func (d DFunction) ComputeHashValue(R2 []byte) ([]byte, error) {
 	var pad []byte
 	pad = make([]byte, 64, 64)
 
