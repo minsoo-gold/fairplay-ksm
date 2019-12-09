@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var privateKey = []byte(`-----BEGIN RSA PRIVATE KEY-----
+var privateKey = `-----BEGIN RSA PRIVATE KEY-----
 MIICXAIBAAKBgQC0XgENuL2ujKrsVJDsq1SxNL43N6792teqp3Siihi+mn6ZDdfc
 XP3FsPQNltBQkiWIJGPosoRjwDuAS1ntEEqJyc9PBnXhDEtsJo/O4fDy3umMrvCH
 Wt4R/rJ3O4b9m8V+QCO9hE0kFpRJZMt7RywmFdram01uARkGb7xOC3zPrQIDAQAB
@@ -20,9 +20,9 @@ Dgz3l3PNTXDCcQDh9wyEZV0SgIp7SYCDrL0CQEo8HEolVN1ZMEEIITCpPdX2tZws
 EoC/oWOzKy4v0m3YL/+iwsL+dUwSGuJefhTmV7v/DmzRixvOpDum7WB5BDC8VERJ
 Q5uTL1t7RFIydXcvm80CQH/E17mWT66PPeqloAfSH/5tJyak2gagkuFnMh779JRF
 rl5YIIiAh+q5DkcjWw6eni5O4+UuwXRp29vZaxmDlIE=
------END RSA PRIVATE KEY-----`)
+-----END RSA PRIVATE KEY-----`
 
-var cert = []byte(`-----BEGIN CERTIFICATE-----
+var cert = `-----BEGIN CERTIFICATE-----
 MIIDfTCCAmWgAwIBAgIIboBT3GOPJ50wDQYJKoZIhvcNAQEFBQAwfTELMAkGA1UE
 BhMCVVMxEzARBgNVBAoMCkFwcGxlIEluYy4xJjAkBgNVBAsMHUFwcGxlIENlcnRp
 ZmljYXRpb24gQXV0aG9yaXR5MTEwLwYDVQQDDChEUk0gVGVjaG5vbG9naWVzIENl
@@ -42,13 +42,19 @@ i/hFKhTNpbNWBXSkKYn1QpcnohAnjLsrNED7R0b4A7z1yBhUjU96uRsKU+Dd6St9
 XMlvvK49iSWNadfz7IictPrOjvHj4hRzepE43U5unevsth2FXu553LMCZw7gy4h9
 IMYU4NZSWhf5z+wYpjtzYxdoqynjvihqFdGqYDC2drzpLLhaCXZhZUq2D1mXoQaY
 6URsYkp6FRwIAx++KnIwE7Q3kK6s+5sRpKK4zZ0y0O9Z
------END CERTIFICATE-----`)
+-----END CERTIFICATE-----`
 
 func TestEncryptAndDecrypt(t *testing.T) {
 	assert := assert.New(t)
 	origData := []byte("plainText")
 
-	en, err := RSAEncryptByCert(cert, origData)
+	parsesPublicCertification, err := ParsePublicCertification(cert)
+	assert.NoError(err)
+
+	en, err := RSAEncryptByCert(parsesPublicCertification, origData)
+	assert.NoError(err)
+
+	privateKey, err := DecryptPriKey(privateKey, "")
 	assert.NoError(err)
 
 	de, err := RSADecryptByKey(privateKey, en)

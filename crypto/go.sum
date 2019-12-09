@@ -1,3 +1,5 @@
+github.com/89hmdys/toast v0.0.0-20160624065720-3a038d97263a h1:UvGjg5GSp5EdFlmKCGEgFTRMzFK4Wc0uBvkXxc2Pf+w=
+github.com/89hmdys/toast v0.0.0-20160624065720-3a038d97263a/go.mod h1:dxeg/2DmwPalMk1XVepr9LdPNkq7gs+I0cisoChoJ08=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

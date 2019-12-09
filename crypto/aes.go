@@ -5,7 +5,7 @@ import (
 	"crypto/cipher"
 )
 
-// CBCEncrypt is given key, iv to encrypt the plainText in AES CBC way.
+// AESCBCEncrypt is given key, iv to encrypt the plainText in AES CBC way.
 func AESCBCEncrypt(key, iv, plainText []byte) ([]byte, error) {
 
 	if len(plainText)%aes.BlockSize != 0 {
@@ -26,7 +26,7 @@ func AESCBCEncrypt(key, iv, plainText []byte) ([]byte, error) {
 
 }
 
-// CBCDecrypt is given key, iv to decrypt the cipherText in AES CBC way.
+// AESCBCDecrypt is given key, iv to decrypt the cipherText in AES CBC way.
 func AESCBCDecrypt(key, iv, cipherText []byte) ([]byte, error) {
 
 	if len(cipherText) < aes.BlockSize {
@@ -49,7 +49,7 @@ func AESCBCDecrypt(key, iv, cipherText []byte) ([]byte, error) {
 	return cipherText, nil
 }
 
-// ECBEncrypt is given key, iv to encrypt the plainText in AES ECB way.
+// AESECBEncrypt is given key, iv to encrypt the plainText in AES ECB way.
 func AESECBEncrypt(key, plainText []byte) ([]byte, error) {
 	if len(plainText)%aes.BlockSize != 0 {
 		panic("Need a multiple of the blocksize")
@@ -68,7 +68,7 @@ func AESECBEncrypt(key, plainText []byte) ([]byte, error) {
 	return cipherText, nil
 }
 
-// ECBDecrypt is given key, iv to decrypt the cipherText in AES ECB way.
+// AESECBDecrypt is given key, iv to decrypt the cipherText in AES ECB way.
 func AESECBDecrypt(key, cipherText []byte) ([]byte, error) {
 	if len(cipherText)%aes.BlockSize != 0 {
 		panic("crypto/cipher: input not full blocks")
