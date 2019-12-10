@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/md5"
+	"crypto/rsa"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -8,7 +10,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/Cooomma/ksm/d"
+	"github.com/Cooomma/ksm/crypto"
 	"github.com/Cooomma/ksm/ksm"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -36,13 +38,19 @@ type KeyResponse struct {
 }
 
 func main() {
+
+	// Setting Logger
+	// log.SetFormatter(&log.JSONFormatter{})
+	// log.SetOutput(os.Stdout)
+	// log.SetLevel(log.DebugLevel)
+
+	// Setting Echo
 	e := echo.New()
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		Skipper:      DefaultSkipper,
 		AllowOrigins: []string{"*"}, // FIXME: Use your stremaing domain.
 		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPost},
 	}))
@@ -50,25 +58,12 @@ func main() {
 	e.GET("/", handleGETHealth)
 	e.GET("/healthy", handleGETHealth)
 	e.POST("/fps/license", handlePOSTLicense)
-	e.POST("/key", handlePOSTGenerateKey)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
 
 func handleGETHealth(ctx echo.Context) error {
 	return ctx.String(http.StatusOK, "OK")
-}
-
-func handlePOSTGenerateKey(ctx echo.Context) error {
-	keyRequest := new(KeyRequest)
-	if err := ctx.Bind(keyRequest); err != nil {
-		errorMessage := &ErrorMessage{Status: 400, Message: err.Error()}
-		return ctx.JSON(http.StatusBadRequest, errorMessage)
-	}
-	return ctx.JSON(http.StatusOK, KeyResponse{
-		Key: hex.EncodeToString(generateTicketKey([]byte(keyRequest.TicketID))),
-		IV:  hex.EncodeToString(generateTicketIV([]byte(keyRequest.TicketID))),
-	})
 }
 
 func handlePOSTLicense(ctx echo.Context) error {
@@ -83,20 +78,27 @@ func handlePOSTLicense(ctx echo.Context) error {
 	playback, err := base64.StdEncoding.DecodeString(spcMessage.Spc)
 	checkError(err)
 
-	if pub == "" {
-		return ctx.JSON(http.StatusInternalServerError, "Certification Error.")
+	pubCert, err := readPublicCert()
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, "Public Certification Error")
 	}
 
-	if pri == "" {
-		return ctx.JSON(http.StatusInternalServerError, "Private Key Error.")
+	priKey, err := readPriKey()
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, "Private Key Error")
+	}
+
+	ask, err := readASk()
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, "ASk Error")
 	}
 
 	k := &ksm.Ksm{
-		Pub:       pub,
-		Pri:       pri,
-		Rck:       RandomContentKey{}, // Use random content key for testing
-		DFunction: d.AppleD{},         // Use D function provided by Apple Inc.
-		Ask:       []byte{},
+		Pub: pubCert,
+		Pri: priKey,
+		Rck: RandomContentKey{}, // Use random content key for testing
+		//DFunction: DFunction{},        // Use D function provided by Apple Inc.
+		Ask: ask,
 	}
 	ckc, err2 := k.GenCKC(playback)
 	checkError(err2)
@@ -119,7 +121,7 @@ type RandomContentKey struct {
 
 // Implement FetchContentKey func
 func (RandomContentKey) FetchContentKey(assetID []byte) ([]byte, []byte, error) {
-	return generateTicketKey(assetID), generateTicketIV(assetID), nil
+	return generateDummyKeyIVPair(assetID)
 }
 
 // Implement FetchContentKeyDuration func
@@ -131,15 +133,62 @@ func (RandomContentKey) FetchContentKeyDuration(assetID []byte) (*ksm.CkcContent
 	return ksm.NewCkcContentKeyDurationBlock(LeaseDuration, RentalDuration), nil
 }
 
-func envBase64Decode(s string) string {
+func generateDummyKeyIVPair(assetID []byte) ([]byte, []byte, error) {
+	dummyKey := make([]byte, 16)
+	dummyIV := make([]byte, 16)
+	rand.Read(dummyIV)
+
+	if len(assetID) == 0 {
+		rand.Read(dummyKey)
+		return dummyKey, dummyIV, nil
+	}
+	// NOTE: Here is to implement your key generator.
+	generator := md5.New()
+	generator.Write(assetID)
+	dummyKey = generator.Sum(nil)
+	return dummyKey, dummyIV, nil
+}
+
+func envBase64Decode(s string) []byte {
 	data, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
 		fmt.Println("Env Decode Error: ", err)
-		return ""
+		return []byte{}
 	}
-	return string(data)
+	return data
 }
 
-var pub = envBase64Decode(os.Getenv("FAIRPLAY_CERTIFICATION"))
-var pri = envBase64Decode(os.Getenv("FAIRPLAY_PRIVATE_KEY"))
-var ask = envBase64Decode(os.Getenv("FAIRPLAY_APPLICATION_SERVICE_KEY"))
+func readPublicCert() (*rsa.PublicKey, error) {
+	pubEnvVar := envBase64Decode(os.Getenv("FAIRPLAY_CERTIFICATION"))
+
+	if len(pubEnvVar) == 0 {
+		panic("Can't not find FAIRPLAY CERTIFICATION")
+	}
+	pubCert, err := crypto.ParsePublicCertification(pubEnvVar)
+	if err != nil {
+		return nil, err
+	}
+	return pubCert, nil
+}
+
+func readPriKey() (*rsa.PrivateKey, error) {
+	priEnvVar := envBase64Decode(os.Getenv("FAIRPLAY_PRIVATE_KEY"))
+
+	if len(priEnvVar) == 0 {
+		panic("Can't not find FAIRPLAY PRIVATE KEY")
+	}
+	priKey, err := crypto.DecryptPriKey(priEnvVar, []byte(""))
+	if err != nil {
+		return nil, err
+	}
+	return priKey, nil
+}
+
+func readASk() ([]byte, error) {
+	askEnvVar := os.Getenv("FAIRPLAY_APPLICATION_SERVICE_KEY")
+	if len(askEnvVar) == 0 {
+		askEnvVar = "d87ce7a26081de2e8eb8acef3a6dc179" //Apple provided
+	}
+	ask, _ := hex.DecodeString(askEnvVar)
+	return ask, nil
+}

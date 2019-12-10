@@ -1,6 +1,7 @@
 package ksm
 
 import (
+	"encoding/hex"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -441,15 +442,15 @@ var spcContainerTests = []spcTest{
 func TestGenCKC(t *testing.T) {
 	assert := assert.New(t)
 
-	pubKey, _ := crypto.ParsePublicCertification(pub)
-	priKey, _ := crypto.DecryptPriKey(pri, "")
+	pubKey, _ := crypto.ParsePublicCertification([]byte(pub))
+	priKey, _ := crypto.DecryptPriKey([]byte(pri), []byte{})
+	ask, _ := hex.DecodeString("d87ce7a26081de2e8eb8acef3a6dc179")
 
 	k := &Ksm{
 		Pub: pubKey,
 		Pri: priKey,
 		Rck: RandomContentKey{},
-		D:   DFunction{},
-		Ask: []byte{},
+		Ask: ask,
 	}
 	for _, test := range spcContainerTests {
 		spcMessage := readBin(test.filePath)
@@ -466,8 +467,8 @@ func TestDebugCKC(t *testing.T) {
 }
 
 func TestParseSPCV1(t *testing.T) {
-	pubKey, _ := crypto.ParsePublicCertification(pub)
-	priKey, _ := crypto.DecryptPriKey(pri, "")
+	pubKey, _ := crypto.ParsePublicCertification([]byte(pub))
+	priKey, _ := crypto.DecryptPriKey([]byte(pri), []byte{})
 	assert := assert.New(t)
 
 	for _, test := range spcContainerTests {

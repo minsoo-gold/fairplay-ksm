@@ -1,6 +1,7 @@
 package ksm
 
 import (
+	"crypto/aes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha1"
@@ -8,7 +9,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/Cooomma/ksm/crypto"
@@ -63,7 +63,7 @@ type Ksm struct {
 	Pri *rsa.PrivateKey
 	Rck ContentKey
 	Ask []byte
-	D   DFunction
+	d   DFunction
 }
 
 // GenCKC computes the incoming server playback context (SPC message) returned to client by the SKDServer library.
@@ -77,30 +77,34 @@ func (k *Ksm) GenCKC(playback []byte) ([]byte, error) {
 	skr1 := parseSKR1(ttlvs[tagSessionKeyR1])
 
 	r2 := ttlvs[tagR2]
-	dask, err := k.D.Compute(r2.Value, k.Ask)
+	dask, err := k.d.Compute(r2.Value, k.Ask)
 
-	if err != nil {
-		return nil, err
-	}
-
-	DecryptedSKR1Payload, err := decryptSKR1Payload(*skr1, dask)
 	if err != nil {
 		return nil, err
 	}
 	fmt.Printf("DASk Value:\n\t%s\n\n", hex.EncodeToString(dask))
 
+	DecryptedSKR1Payload, err := decryptSKR1Payload(*skr1, dask)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("Decrypted SKR1Payload: %s\n", hex.EncodeToString(DecryptedSKR1Payload.IntegrityBytes))
+
+	//FIXME: Have to complete this cksum.
 	//Check the integrity of this SPC message
-	checkTheIntegrity, ok := ttlvs[tagSessionKeyR1Integrity]
-	if !ok {
-		return nil, errors.New("tagSessionKeyR1Integrity block doesn't existed")
-	}
+	/*
+		checkTheIntegrity, ok := ttlvs[tagSessionKeyR1Integrity]
+		if !ok {
+			return nil, errors.New("tagSessionKeyR1Integrity block doesn't existed")
+		}
 
-	fmt.Printf("checkTheIntegrity: %s\n", hex.EncodeToString(checkTheIntegrity.Value))
+		fmt.Printf("checkTheIntegrity: %s\n", hex.EncodeToString(checkTheIntegrity.Value))
 
-	if !reflect.DeepEqual(checkTheIntegrity.Value, DecryptedSKR1Payload.IntegrityBytes) {
-		return nil, errors.New("check the integrity of the SPC failed")
-	}
-
+		if !reflect.DeepEqual(checkTheIntegrity.Value, DecryptedSKR1Payload.IntegrityBytes) {
+			return nil, errors.New("check the integrity of the SPC failed")
+		}
+	*/
 	fmt.Printf("DASk Value:\n\t%s\n\n", hex.EncodeToString(dask))
 	fmt.Printf("SPC SK Value:\n\t%s\n\n", hex.EncodeToString(DecryptedSKR1Payload.SK))
 	fmt.Printf("SPC [SK..R1] IV Value:\n\t%s\n\n", hex.EncodeToString(skr1.IV))
@@ -121,6 +125,7 @@ func (k *Ksm) GenCKC(playback []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("enCK Length ", len(enCk))
 
 	returnTllvs := findReturnRequestBlocks(spcv1)
 
@@ -128,6 +133,8 @@ func (k *Ksm) GenCKC(playback []byte) ([]byte, error) {
 	ckcR1 := CkcR1{
 		R1: DecryptedSKR1Payload.R1,
 	}
+
+	fmt.Println("ckcDataIV Length", len(ckcDataIv.IV))
 
 	encryptedArSeed, err := getEncryptedArSeed(DecryptedSKR1Payload.R1, ttlvs[tagAntiReplaySeed].Value)
 	if err != nil {
@@ -232,7 +239,7 @@ func getEncryptedArSeed(r1 []byte, arSeed []byte) ([]byte, error) {
 }
 
 func generateRandomIv() CkcDataIv {
-	key := make([]byte, 16)
+	key := make([]byte, aes.BlockSize)
 	rand.Read(key)
 
 	return CkcDataIv{
@@ -242,6 +249,7 @@ func generateRandomIv() CkcDataIv {
 }
 
 func encryptCkcPayload(encryptedArSeed []byte, iv CkcDataIv, ckcPayload []byte) (*CkcEncryptedPayload, error) {
+
 	encryped, err := crypto.AESCBCEncrypt(encryptedArSeed, iv.IV, ckcPayload)
 	if err != nil {
 		return nil, err
@@ -278,10 +286,12 @@ func encryptCK(assetID []byte, ck ContentKey, sk []byte) ([]byte, []byte, error)
 	}
 
 	var iv []byte
-	iv = make([]byte, len(contentKey), len(contentKey))
+	iv = make([]byte, len(contentKey))
 
 	//enCk, err := aes.Encrypt(sk, iv, contentKey)
+	fmt.Println("encryptCK.", len(sk), len(iv), len(contentKey))
 	enCK, err := crypto.AESCBCEncrypt(sk, iv, contentKey)
+	fmt.Println("encryptCK.", len(enCK))
 	return enCK, contentIv, err
 }
 
@@ -440,6 +450,8 @@ func decryptSKR1Payload(skr1 SKR1TLLVBlock, dask []byte) (*DecryptedSKR1Payload,
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("Decrypt Payload Row Length: ", len(decryptPayloadRow))
 
 	if len(decryptPayloadRow) != 96 {
 		return nil, errors.New("wrong decrypt payload size. Must be 96 bytes expected")
