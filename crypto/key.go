@@ -7,17 +7,17 @@ import (
 	"encoding/pem"
 )
 
-func DecryptPriKey(prikey, passphrase string) (*rsa.PrivateKey, error) {
-	priPem, _ := pem.Decode([]byte(prikey))
+func DecryptPriKey(prikey, passphrase []byte) (*rsa.PrivateKey, error) {
+	priPem, _ := pem.Decode(prikey)
 	if priPem.Type != "RSA PRIVATE KEY" {
 		panic("Private Key is not RSA Private Key.")
 	}
 
 	var decryptedPriKeyByte []byte
-	if passphrase == "" {
+	if len(passphrase) == 0 {
 		decryptedPriKeyByte = priPem.Bytes
 	} else {
-		decrypted, err := x509.DecryptPEMBlock(priPem, []byte(passphrase))
+		decrypted, err := x509.DecryptPEMBlock(priPem, passphrase)
 		if err != nil {
 			return nil, err
 		}
@@ -41,8 +41,8 @@ func ParseASk(ask string) ([]byte, error) {
 	return parsedASk, nil
 }
 
-func ParsePublicCertification(pubCert string) (*rsa.PublicKey, error) {
-	block, _ := pem.Decode([]byte(pubCert))
+func ParsePublicCertification(pubCert []byte) (*rsa.PublicKey, error) {
+	block, _ := pem.Decode(pubCert)
 	if block == nil {
 		panic("failed to parse certificate PEM")
 	}

@@ -48,13 +48,13 @@ func TestEncryptAndDecrypt(t *testing.T) {
 	assert := assert.New(t)
 	origData := []byte("plainText")
 
-	parsesPublicCertification, err := ParsePublicCertification(cert)
+	parsesPublicCertification, err := ParsePublicCertification([]byte(cert))
 	assert.NoError(err)
 
 	en, err := RSAEncryptByCert(parsesPublicCertification, origData)
 	assert.NoError(err)
 
-	privateKey, err := DecryptPriKey(privateKey, "")
+	privateKey, err := DecryptPriKey([]byte(privateKey), []byte{})
 	assert.NoError(err)
 
 	de, err := RSADecryptByKey(privateKey, en)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
+	"fmt"
 )
 
 func pkcs5Padding(ciphertext []byte, blockSize int) []byte {
@@ -13,8 +14,7 @@ func pkcs5Padding(ciphertext []byte, blockSize int) []byte {
 }
 
 func pkcs5UnPadding(origData []byte) []byte {
-	padding := origData[len(origData)-1]
-	return origData[:len(origData)-int(padding)]
+	return origData[:(len(origData) - int(origData[len(origData)-1]))]
 }
 
 // AESCBCEncrypt is given key, iv to encrypt the plainText in AES CBC way.
@@ -25,10 +25,11 @@ func AESCBCEncrypt(key, iv, plainText []byte) ([]byte, error) {
 	}
 
 	mode := cipher.NewCBCEncrypter(block, iv)
-
-	content := pkcs5Padding(plainText, block.BlockSize())
-	ciphertext := make([]byte, len(content))
-	mode.CryptBlocks(ciphertext, content)
+	if len(plainText)%aes.BlockSize != 0 {
+		plainText = pkcs5Padding(plainText, block.BlockSize())
+	}
+	ciphertext := make([]byte, len(plainText))
+	mode.CryptBlocks(ciphertext, plainText)
 
 	return ciphertext, nil
 
@@ -49,12 +50,16 @@ func AESCBCDecrypt(key, iv, cipherText []byte) ([]byte, error) {
 	mode := cipher.NewCBCDecrypter(block, iv)
 	plainText := make([]byte, len(cipherText))
 	mode.CryptBlocks(plainText, cipherText)
-
+	fmt.Println("AES-CBC Decrpypt: PlainText Length: ", len(plainText))
+	if len(cipherText)%aes.BlockSize == 0 {
+		return plainText, nil
+	}
 	return pkcs5UnPadding(plainText), nil
 }
 
-// AESECBEncrypt is given key, iv to encrypt the plainText in AES ECB way.
+// AESECBEncrypt is given key to encrypt the plainText in AES ECB way.
 func AESECBEncrypt(key, plainText []byte) ([]byte, error) {
+	fmt.Println("AES-ECB Encrpypt: PlainText Length: ", len(plainText))
 	if len(plainText)%aes.BlockSize != 0 {
 		panic("Need a multiple of the blocksize")
 	}
@@ -64,30 +69,32 @@ func AESECBEncrypt(key, plainText []byte) ([]byte, error) {
 	}
 
 	cipherText := make([]byte, len(plainText))
+	size := aes.BlockSize
 
-	for len(plainText) > 0 {
-		block.Encrypt(cipherText, plainText[:aes.BlockSize])
-		plainText = plainText[aes.BlockSize:]
-		cipherText = cipherText[aes.BlockSize:]
+	for bs, be := 0, size; bs < len(plainText); bs, be = bs+size, be+size {
+		block.Encrypt(cipherText[bs:be], plainText[bs:be])
 	}
+
 	return cipherText, nil
 }
 
-// AESECBDecrypt is given key, iv to decrypt the cipherText in AES ECB way.
+// AESECBDecrypt is given key to decrypt the cipherText in AES ECB way.
 func AESECBDecrypt(key, cipherText []byte) ([]byte, error) {
+	fmt.Println("AES-ECB: cipherText Length: ", len(cipherText))
 	if len(cipherText)%aes.BlockSize != 0 {
-		panic("crypto/cipher: input not full blocks")
+		panic("Input not full blocks")
 	}
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
+
 	plainText := make([]byte, len(cipherText))
-	for len(cipherText) > 0 {
-		block.Decrypt(plainText, cipherText[:aes.BlockSize])
-		plainText = plainText[aes.BlockSize:]
-		cipherText = cipherText[aes.BlockSize:]
+	size := aes.BlockSize
+
+	for bs, be := 0, size; bs < len(plainText); bs, be = bs+size, be+size {
+		block.Decrypt(plainText[bs:be], cipherText[bs:be])
 	}
 
 	return plainText, nil
