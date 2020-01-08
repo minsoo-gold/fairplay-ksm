@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/Cooomma/ksm/crypto"
@@ -91,20 +92,17 @@ func (k *Ksm) GenCKC(playback []byte) ([]byte, error) {
 
 	fmt.Printf("Decrypted SKR1Payload: %s\n", hex.EncodeToString(DecryptedSKR1Payload.IntegrityBytes))
 
-	//FIXME: Have to complete this cksum.
-	//Check the integrity of this SPC message
-	/*
-		checkTheIntegrity, ok := ttlvs[tagSessionKeyR1Integrity]
-		if !ok {
-			return nil, errors.New("tagSessionKeyR1Integrity block doesn't existed")
-		}
+	checkTheIntegrity, ok := ttlvs[tagSessionKeyR1Integrity]
+	if !ok {
+		return nil, errors.New("tagSessionKeyR1Integrity block doesn't existed")
+	}
 
-		fmt.Printf("checkTheIntegrity: %s\n", hex.EncodeToString(checkTheIntegrity.Value))
+	fmt.Printf("checkTheIntegrity: %s\n", hex.EncodeToString(checkTheIntegrity.Value))
 
-		if !reflect.DeepEqual(checkTheIntegrity.Value, DecryptedSKR1Payload.IntegrityBytes) {
-			return nil, errors.New("check the integrity of the SPC failed")
-		}
-	*/
+	if !reflect.DeepEqual(checkTheIntegrity.Value, DecryptedSKR1Payload.IntegrityBytes) {
+		return nil, errors.New("check the integrity of the SPC failed")
+	}
+
 	fmt.Printf("DASk Value:\n\t%s\n\n", hex.EncodeToString(dask))
 	fmt.Printf("SPC SK Value:\n\t%s\n\n", hex.EncodeToString(DecryptedSKR1Payload.SK))
 	fmt.Printf("SPC [SK..R1] IV Value:\n\t%s\n\n", hex.EncodeToString(skr1.IV))
