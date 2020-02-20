@@ -1,5 +1,5 @@
 # ksm
-
+![Golang Version](https://img.shields.io/github/go-mod/go-version/Cooomma/ksm-golang)
 ![Build Status](https://github.com/Cooomma/ksm-golang/workflows/Go%20Build/badge.svg?branch=master)
 [![Maintainability](https://api.codeclimate.com/v1/badges/f2af114d5bc93979aa41/maintainability)](https://codeclimate.com/github/Cooomma/ksm-golang/maintainability)
 
