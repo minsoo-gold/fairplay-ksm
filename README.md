@@ -2,6 +2,7 @@
 ![Golang Version](https://img.shields.io/github/go-mod/go-version/Cooomma/ksm-golang)
 ![Build Status](https://github.com/Cooomma/ksm-golang/workflows/Go%20Build/badge.svg?branch=master)
 [![Maintainability](https://api.codeclimate.com/v1/badges/f2af114d5bc93979aa41/maintainability)](https://codeclimate.com/github/Cooomma/ksm-golang/maintainability)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FCooomma%2Fksm-golang.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FCooomma%2Fksm-golang?ref=badge_shield)
 
 
 Apple FairPlay Streaming ([FPS](https://developer.apple.com/streaming/fps/)) securely delivers keys to Apple mobile devices, Apple TV, and Safari on OS X, which will enable playback of encrypted video content. 
@@ -55,3 +56,6 @@ Date: Thu, 08 Mar 2018 05:51:02 GMT
 
 ### How to Debugging FairPlay Streaming?
 [https://developer.apple.com/library/archive/technotes/tn2454/_index.html](https://developer.apple.com/library/archive/technotes/tn2454/_index.html)
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FCooomma%2Fksm-golang.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FCooomma%2Fksm-golang?ref=badge_large)
