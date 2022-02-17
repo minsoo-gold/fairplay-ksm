@@ -1,7 +1,7 @@
 # FairPlay Key Service Management
 
 ![Golang Version](https://img.shields.io/github/go-mod/go-version/cooomma/fairplay-ksm)
-![Build Status](https://github.com/cooomma/fairplay-ksm/workflows/Go%20Build/badge.svg?branch=master)
+![Build Status](https://github.com/cooomma/fairplay-ksm/workflows/Test/badge.svg?branch=master)
 
 Apple FairPlay Streaming ([FPS](https://developer.apple.com/streaming/fps/)) securely delivers keys to Apple mobile devices, Apple TV, and Safari on OS X, which will enable playback of encrypted video content.
 
