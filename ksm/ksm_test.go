@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Cooomma/ksm/crypto"
+	"github.com/cooomma/fairplay-ksm/cryptos"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -442,8 +442,8 @@ var spcContainerTests = []spcTest{
 func TestGenCKC(t *testing.T) {
 	assert := assert.New(t)
 
-	pubKey, _ := crypto.ParsePublicCertification([]byte(pub))
-	priKey, _ := crypto.DecryptPriKey([]byte(pri), []byte{})
+	pubKey, _ := cryptos.ParsePublicCertification([]byte(pub))
+	priKey, _ := cryptos.DecryptPriKey([]byte(pri), []byte{})
 	ask, _ := hex.DecodeString("d87ce7a26081de2e8eb8acef3a6dc179")
 
 	k := &Ksm{
@@ -467,8 +467,8 @@ func TestDebugCKC(t *testing.T) {
 }
 
 func TestParseSPCV1(t *testing.T) {
-	pubKey, _ := crypto.ParsePublicCertification([]byte(pub))
-	priKey, _ := crypto.DecryptPriKey([]byte(pri), []byte{})
+	pubKey, _ := cryptos.ParsePublicCertification([]byte(pub))
+	priKey, _ := cryptos.DecryptPriKey([]byte(pri), []byte{})
 	assert := assert.New(t)
 
 	for _, test := range spcContainerTests {

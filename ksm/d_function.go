@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 
-	"github.com/Cooomma/ksm/crypto"
+	"github.com/cooomma/fairplay-ksm/cryptos"
 )
 
 const PRIME = uint32(813416437)
@@ -26,7 +26,7 @@ func (d DFunction) Compute(R2 []byte, ask []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	DASk, err := crypto.AESECBEncrypt(ask, hashValue)
+	DASk, err := cryptos.AESECBEncrypt(ask, hashValue)
 	if err != nil {
 		return nil, err
 	}

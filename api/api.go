@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Cooomma/ksm/crypto"
-	"github.com/Cooomma/ksm/ksm"
+	"github.com/cooomma/fairplay-ksm/cryptos"
+	"github.com/cooomma/fairplay-ksm/ksm"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -137,7 +137,7 @@ func ReadPublicCert() *rsa.PublicKey {
 		panic("Can't not find FAIRPLAY CERTIFICATION")
 	}
 
-	pubCert, err := crypto.ParsePublicCertification(pubEnvVar)
+	pubCert, err := cryptos.ParsePublicCertification(pubEnvVar)
 	if err != nil {
 		panic(err)
 	}
@@ -150,7 +150,7 @@ func ReadPriKey() *rsa.PrivateKey {
 	if len(priEnvVar) == 0 {
 		panic("Can't not find FAIRPLAY PRIVATE KEY")
 	}
-	priKey, err := crypto.DecryptPriKey(priEnvVar, []byte(""))
+	priKey, err := cryptos.DecryptPriKey(priEnvVar, []byte(""))
 	if err != nil {
 		panic(err)
 	}

@@ -12,7 +12,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/Cooomma/ksm/crypto"
+	"github.com/cooomma/fairplay-ksm/cryptos"
 )
 
 // SPCContainer represents a container to contain SPC message filed.
@@ -233,7 +233,7 @@ func getEncryptedArSeed(r1 []byte, arSeed []byte) ([]byte, error) {
 	h.Write(r1)
 	arKey := h.Sum(nil)[0:16]
 
-	return crypto.AESECBEncrypt(arKey, arSeed)
+	return cryptos.AESECBEncrypt(arKey, arSeed)
 }
 
 func generateRandomIv() CkcDataIv {
@@ -248,7 +248,7 @@ func generateRandomIv() CkcDataIv {
 
 func encryptCkcPayload(encryptedArSeed []byte, iv CkcDataIv, ckcPayload []byte) (*CkcEncryptedPayload, error) {
 
-	encryped, err := crypto.AESCBCEncrypt(encryptedArSeed, iv.IV, ckcPayload)
+	encryped, err := cryptos.AESCBCEncrypt(encryptedArSeed, iv.IV, ckcPayload)
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +288,7 @@ func encryptCK(assetID []byte, ck ContentKey, sk []byte) ([]byte, []byte, error)
 
 	//enCk, err := aes.Encrypt(sk, iv, contentKey)
 	fmt.Println("encryptCK.", len(sk), len(iv), len(contentKey))
-	enCK, err := crypto.AESCBCEncrypt(sk, iv, contentKey)
+	enCK, err := cryptos.AESCBCEncrypt(sk, iv, contentKey)
 	fmt.Println("encryptCK.", len(enCK))
 	return enCK, contentIv, err
 }
@@ -305,7 +305,7 @@ func ParseSPCV1(playback []byte, pub *rsa.PublicKey, pri *rsa.PrivateKey) (*SPCC
 
 	printDebugSPC(spcContainer)
 
-	spcPayload, err := crypto.AESCBCDecrypt(spck, spcContainer.AesKeyIV, spcContainer.SPCPlayload)
+	spcPayload, err := cryptos.AESCBCDecrypt(spck, spcContainer.AesKeyIV, spcContainer.SPCPlayload)
 	if err != nil {
 		return nil, err
 	}
@@ -444,7 +444,7 @@ func decryptSKR1Payload(skr1 SKR1TLLVBlock, dask []byte) (*DecryptedSKR1Payload,
 	}
 
 	// decryptPayloadRow, err := aes.Decrypt(dask, skr1.IV, skr1.Payload)
-	decryptPayloadRow, err := crypto.AESCBCDecrypt(dask, skr1.IV, skr1.Payload)
+	decryptPayloadRow, err := cryptos.AESCBCDecrypt(dask, skr1.IV, skr1.Payload)
 	if err != nil {
 		return nil, err
 	}
@@ -484,7 +484,7 @@ func decryptSPCK(pub *rsa.PublicKey, pri *rsa.PrivateKey, enSpck []byte) ([]byte
 		return nil, errors.New("Wrong [SPCK] length, must be 128")
 	}
 	// spck, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, pri, enSpck, nil)
-	spck, err := crypto.OAEPDecrypt(pub, pri, enSpck)
+	spck, err := cryptos.OAEPDecrypt(pub, pri, enSpck)
 	if err != nil {
 		// create a slice for the errors
 		var errstrings []string
@@ -502,6 +502,6 @@ func decryptSPCK(pub *rsa.PublicKey, pri *rsa.PrivateKey, enSpck []byte) ([]byte
 // IV represents the value of SPC message bytes 8-23.
 func decryptSPCpayload(spcContainer *SPCContainer, spck []byte) ([]byte, error) {
 	// spcPayload, err := aes.Decrypt(spck, spcContainer.AesKeyIV, spcContainer.SPCPlayload)
-	spcPayload, err := crypto.AESCBCDecrypt(spck, spcContainer.AesKeyIV, spcContainer.SPCPlayload)
+	spcPayload, err := cryptos.AESCBCDecrypt(spck, spcContainer.AesKeyIV, spcContainer.SPCPlayload)
 	return spcPayload, err
 }
