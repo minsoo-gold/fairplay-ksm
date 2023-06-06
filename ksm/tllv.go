@@ -4,7 +4,8 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"errors"
-	"fmt"
+
+	"github.com/cooomma/fairplay-ksm/logger"
 )
 
 // TLLVBlock represents a TLLV block structure.
@@ -66,8 +67,8 @@ func (t *TLLVBlock) check() error {
 		return errors.New("tag not found")
 	}
 	if len(t.Value) == 0 {
-		fmt.Printf("tag: %x :value not found\n", t.Tag)
-		fmt.Printf("tag.ValueLength: %x \n", t.ValueLength)
+		logger.Printf("tag: %x :value not found\n", t.Tag)
+		logger.Printf("tag.ValueLength: %x \n", t.ValueLength)
 
 		//return fmt.Errorf("tag: %x :value not found", t.Tag)
 	}
@@ -99,7 +100,7 @@ type CkcDataIv struct {
 	IV []byte
 }
 
-//CkcEncryptedPayload represents a ckc encrypted payload structure.
+// CkcEncryptedPayload represents a ckc encrypted payload structure.
 type CkcEncryptedPayload struct {
 	Payload []byte
 }

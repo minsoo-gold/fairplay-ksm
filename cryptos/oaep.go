@@ -5,13 +5,14 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha1"
-	"errors"
 	"fmt"
+
+	"github.com/cooomma/fairplay-ksm/logger"
 )
 
 func OAEPDecrypt(pub *rsa.PublicKey, pri *rsa.PrivateKey, cipherText []byte) ([]byte, error) {
 	if len(cipherText) == 0 {
-		return nil, errors.New("cipherText can not be empty string.")
+		return nil, fmt.Errorf("cipherText can not be empty string")
 	}
 	buffer := bytes.Buffer{}
 	for _, cipherTextBlock := range grouping(cipherText, len(pub.N.Bytes())) {
@@ -27,7 +28,7 @@ func OAEPDecrypt(pub *rsa.PublicKey, pri *rsa.PrivateKey, cipherText []byte) ([]
 
 func grouping(src []byte, size int) [][]byte {
 	var groups [][]byte
-	fmt.Println(size)
+	logger.Println(size)
 	srcSize := len(src)
 	if srcSize <= size {
 		groups = append(groups, src)

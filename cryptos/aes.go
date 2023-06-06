@@ -5,6 +5,8 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"fmt"
+
+	"github.com/cooomma/fairplay-ksm/logger"
 )
 
 func pkcs5Padding(ciphertext []byte, blockSize int) []byte {
@@ -21,7 +23,7 @@ func pkcs5UnPadding(origData []byte) []byte {
 func AESCBCEncrypt(key, iv, plainText []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	mode := cipher.NewCBCEncrypter(block, iv)
@@ -37,9 +39,8 @@ func AESCBCEncrypt(key, iv, plainText []byte) ([]byte, error) {
 
 // AESCBCDecrypt is given key, iv to decrypt the cipherText in AES CBC way.
 func AESCBCDecrypt(key, iv, cipherText []byte) ([]byte, error) {
-
 	if len(cipherText) == 0 {
-		panic("ciphertext can't be plain")
+		return nil, fmt.Errorf("ciphertext can't be plain")
 	}
 
 	block, err := aes.NewCipher(key)
@@ -50,7 +51,7 @@ func AESCBCDecrypt(key, iv, cipherText []byte) ([]byte, error) {
 	mode := cipher.NewCBCDecrypter(block, iv)
 	plainText := make([]byte, len(cipherText))
 	mode.CryptBlocks(plainText, cipherText)
-	fmt.Println("AES-CBC Decrpypt: PlainText Length: ", len(plainText))
+	logger.Println("AES-CBC Decrpypt: PlainText Length:", len(plainText))
 	if len(cipherText)%aes.BlockSize == 0 {
 		return plainText, nil
 	}
@@ -59,9 +60,9 @@ func AESCBCDecrypt(key, iv, cipherText []byte) ([]byte, error) {
 
 // AESECBEncrypt is given key to encrypt the plainText in AES ECB way.
 func AESECBEncrypt(key, plainText []byte) ([]byte, error) {
-	fmt.Println("AES-ECB Encrpypt: PlainText Length: ", len(plainText))
+	logger.Println("AES-ECB Encrpypt: PlainText Length:", len(plainText))
 	if len(plainText)%aes.BlockSize != 0 {
-		panic("Need a multiple of the blocksize")
+		return nil, fmt.Errorf("need a multiple of the blocksize")
 	}
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -80,9 +81,9 @@ func AESECBEncrypt(key, plainText []byte) ([]byte, error) {
 
 // AESECBDecrypt is given key to decrypt the cipherText in AES ECB way.
 func AESECBDecrypt(key, cipherText []byte) ([]byte, error) {
-	fmt.Println("AES-ECB: cipherText Length: ", len(cipherText))
+	logger.Println("AES-ECB: cipherText Length:", len(cipherText))
 	if len(cipherText)%aes.BlockSize != 0 {
-		panic("Input not full blocks")
+		return nil, fmt.Errorf("input not full blocks")
 	}
 
 	block, err := aes.NewCipher(key)

@@ -5,12 +5,13 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"encoding/pem"
+	"fmt"
 )
 
 func DecryptPriKey(prikey, passphrase []byte) (*rsa.PrivateKey, error) {
 	priPem, _ := pem.Decode(prikey)
 	if priPem.Type != "RSA PRIVATE KEY" {
-		panic("Private Key is not RSA Private Key.")
+		return nil, fmt.Errorf("private key is not RSA Private Key")
 	}
 
 	var decryptedPriKeyByte []byte
@@ -44,11 +45,11 @@ func ParseASk(ask string) ([]byte, error) {
 func ParsePublicCertification(pubCert []byte) (*rsa.PublicKey, error) {
 	block, _ := pem.Decode(pubCert)
 	if block == nil {
-		panic("failed to parse certificate PEM")
+		return nil, fmt.Errorf("failed to parse certificate PEM")
 	}
 	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		panic("failed to parse certificate: " + err.Error())
+		return nil, fmt.Errorf("failed to parse certificate: %w", err)
 	}
 	return cert.PublicKey.(*rsa.PublicKey), nil
 }
