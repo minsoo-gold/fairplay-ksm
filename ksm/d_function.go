@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
+	"fmt"
 
 	"github.com/cooomma/fairplay-ksm/cryptos"
 )
@@ -106,7 +107,7 @@ func (d DFunction) ComputeHashValue(R2 []byte) ([]byte, error) {
 	hh := h.Sum(nil)
 
 	if len(hh) != 20 {
-		panic("hash value must length 20  expected.")
+		return nil, fmt.Errorf("hash value length must be 20, but %d", len(hh))
 	}
 
 	return hh[0:16], nil
