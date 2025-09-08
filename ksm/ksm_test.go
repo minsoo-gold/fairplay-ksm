@@ -457,7 +457,7 @@ func TestGenCKC(t *testing.T) {
 
 		ckc, err := k.GenCKC(spcMessage)
 		assert.NoError(err)
-		assert.NoError(ioutil.WriteFile(test.outFilePath, ckc, 0777))
+		assert.NoError(os.WriteFile(test.outFilePath, ckc, 0777))
 	}
 }
 
@@ -492,8 +492,8 @@ func TestParseSPCV1(t *testing.T) {
 
 func readBin(filePath string) []byte {
 	f, err := os.Open(filePath)
-	defer f.Close()
 	checkErr(err)
+	defer f.Close()
 
 	spcMessage, err := ioutil.ReadAll(f)
 	checkErr(err)
