@@ -9,10 +9,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cooomma/fairplay-ksm/cryptos"
-	"github.com/cooomma/fairplay-ksm/ksm"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/minsoo-gold/fairplay-ksm/cryptos"
+	"github.com/minsoo-gold/fairplay-ksm/ksm"
 )
 
 type SpcMessage struct {
@@ -150,7 +150,7 @@ func ReadPriKey() *rsa.PrivateKey {
 	if len(priEnvVar) == 0 {
 		panic("Can't not find FAIRPLAY PRIVATE KEY")
 	}
-	priKey, err := cryptos.DecryptPriKey(priEnvVar, []byte(""))
+	priKey, err := cryptos.DecryptPriKey(priEnvVar, []byte("axissoft1@"))
 	if err != nil {
 		panic(err)
 	}

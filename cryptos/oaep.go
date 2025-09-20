@@ -7,7 +7,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 
-	"github.com/cooomma/fairplay-ksm/logger"
+	"github.com/minsoo-gold/fairplay-ksm/logger"
 )
 
 func OAEPDecrypt(pub *rsa.PublicKey, pri *rsa.PrivateKey, cipherText []byte) ([]byte, error) {

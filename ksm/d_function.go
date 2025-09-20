@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cooomma/fairplay-ksm/cryptos"
+	"github.com/minsoo-gold/fairplay-ksm/cryptos"
 )
 
 const PRIME = uint32(813416437)
