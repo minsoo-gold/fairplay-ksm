@@ -2,9 +2,10 @@ package ksm
 
 import (
 	"encoding/hex"
-	"io/ioutil"
 	"os"
 	"testing"
+
+	"io"
 
 	"github.com/minsoo-gold/fairplay-ksm/cryptos"
 	"github.com/stretchr/testify/assert"
@@ -20,43 +21,36 @@ type spcTest struct {
 	ttls []TLLVBlock
 }
 
-var pub = `-----BEGIN CERTIFICATE-----
-MIIDfTCCAmWgAwIBAgIIboBT3GOPJ50wDQYJKoZIhvcNAQEFBQAwfTELMAkGA1UE
-BhMCVVMxEzARBgNVBAoMCkFwcGxlIEluYy4xJjAkBgNVBAsMHUFwcGxlIENlcnRp
-ZmljYXRpb24gQXV0aG9yaXR5MTEwLwYDVQQDDChEUk0gVGVjaG5vbG9naWVzIENl
-cnRpZmljYXRpb24gQXV0aG9yaXR5MB4XDTExMTAxODAxNTcyMloXDTEzMTAxNzAx
-NTcyMlowRjERMA8GA1UEAwwIUGFydG5lcjIxETAPBgNVBAsMCFBhcnRuZXIyMREw
-DwYDVQQKDAhQYXJ0bmVyMjELMAkGA1UEBhMCVVMwgZ8wDQYJKoZIhvcNAQEBBQAD
-gY0AMIGJAoGBALReAQ24va6MquxUkOyrVLE0vjc3rv3a16qndKKKGL6afpkN19xc
-/cWw9A2W0FCSJYgkY+iyhGPAO4BLWe0QSonJz08GdeEMS2wmj87h8PLe6Yyu8Ida
-3hH+snc7hv2bxX5AI72ETSQWlElky3tHLCYV2tqbTW4BGQZvvE4LfM+tAgMBAAGj
-gbswgbgwJwYLKoZIhvdjZAYNAQMEGAGAgEeXuoURG4c6qSNQztlZmgq9dM3kTzAv
-BgsqhkiG92NkBg0BBAQgAaWxaRPd6O3itrSL3iqhd3fcpUMMhDQTIebXMN1IfmQw
-HQYDVR0OBBYEFDdUHOfoNQC1nqz9IzDvC/WJR1ssMAwGA1UdEwEB/wQCMAAwHwYD
-VR0jBBgwFoAU6rShbWWjpF5JZST6HCRnrVoa0DMwDgYDVR0PAQH/BAQDAgUgMA0G
-CSqGSIb3DQEBBQUAA4IBAQB4gFunl0sKeqGza5fdDd9Dj0O+rutFPqIFFLY60Qgl
-jQdkzaHegMBqoON3I2KWRxgOeaewArmlgZjK8LoTv++HALB1Thf7N9AulyWVCg7J
-i/hFKhTNpbNWBXSkKYn1QpcnohAnjLsrNED7R0b4A7z1yBhUjU96uRsKU+Dd6St9
-XMlvvK49iSWNadfz7IictPrOjvHj4hRzepE43U5unevsth2FXu553LMCZw7gy4h9
-IMYU4NZSWhf5z+wYpjtzYxdoqynjvihqFdGqYDC2drzpLLhaCXZhZUq2D1mXoQaY
-6URsYkp6FRwIAx++KnIwE7Q3kK6s+5sRpKK4zZ0y0O9Z
------END CERTIFICATE-----`
+var pub = `-----BEGIN CERTIFICATE REQUEST-----
+MIIBkjCB/AIBADBTMRQwEgYDVQQDDAtBeGlzc29mdE9WUDEWMBQGA1UECwwNU3Ry
+ZWFtaW5nVGVhbTEWMBQGA1UECgwNYXhpc3NvZnQgaW5jLjELMAkGA1UEBhMCS1Iw
+gZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALhAuXH26goLsmzBah8lZoPYm6/Y
+0N/d4mY1qGc5DUFaqn2zuRBmHn7IUz5VTc+Mq8KOKIb/SRqf4zt7O1S7LcthqxFd
+S4A8o3paEyEyUqfSqMkw9iRATtcymQtAV4B5nuAl+L6w+LG/vZecZVqtnY0agDYL
+jKjm3B3BK8FjOae5AgMBAAGgADANBgkqhkiG9w0BAQUFAAOBgQBdtH/bY56ECC+B
+HPJjPKd6pzcou3kMvzPcnODI4dL1NZNimggheTpSbZzts7+CTAbUlJ8bzVLtMFI6
+P82pvR18HSOKcUW+uxGDH9+t89/c2K6zXehcynaomXBEKmDQRUw42ih9ApU3yZK5
+liECA3ZwHIJOwk/es4hBLhTqQeNzig==
+-----END CERTIFICATE REQUEST-----`
 
-var pri = `-----BEGIN RSA PRIVATE KEY-----
-MIICXAIBAAKBgQC0XgENuL2ujKrsVJDsq1SxNL43N6792teqp3Siihi+mn6ZDdfc
-XP3FsPQNltBQkiWIJGPosoRjwDuAS1ntEEqJyc9PBnXhDEtsJo/O4fDy3umMrvCH
-Wt4R/rJ3O4b9m8V+QCO9hE0kFpRJZMt7RywmFdram01uARkGb7xOC3zPrQIDAQAB
-AoGBAIO+vkpFjNd4jEi/pHQa2WvuuJogpENsnGdclYc8E8L1mk81m1ys1/iUvk9G
-v7Z6acu9uPR5oNYzzcJyR6cvZSFxtGIZnWNdDOAB71b+YqMvj3lr6MgUdMUgUfxZ
-EDXLEhIoVzyQWIt+f6hjSG/hzyw+Jglo4ogCWPsV3S6UG2WBAkEA5HPddGIUa34k
-2/EGQqyCAo4VYlCUdCFTp9+eFIUedequgsSIZhgblT+FSvMPYARuG/ywLoOivRy1
-dFl0dIB1sQJBAModyMskK0r312kro+URq8VxlwwY0fv2rF1aS0/clQUw5OH/OxEn
-Dgz3l3PNTXDCcQDh9wyEZV0SgIp7SYCDrL0CQEo8HEolVN1ZMEEIITCpPdX2tZws
-8xCJg9WZJJUmbK+EgxCbLHeAffYRng6szOI2jlEp21ZCEC/DlHMqXl09IQECQGSn
-EoC/oWOzKy4v0m3YL/+iwsL+dUwSGuJefhTmV7v/DmzRixvOpDum7WB5BDC8VERJ
-Q5uTL1t7RFIydXcvm80CQH/E17mWT66PPeqloAfSH/5tJyak2gagkuFnMh779JRF
-rl5YIIiAh+q5DkcjWw6eni5O4+UuwXRp29vZaxmDlIE=
------END RSA PRIVATE KEY-----`
+var pri = `-----BEGIN ENCRYPTED PRIVATE KEY-----
+MIIC5TBfBgkqhkiG9w0BBQ0wUjAxBgkqhkiG9w0BBQwwJAQQ2h8/u73uiL3nsCVg
+ADYItAICCAAwDAYIKoZIhvcNAgkFADAdBglghkgBZQMEASoEEMXlz7V6d+OrGe2G
+MMy83OYEggKAY33AleG0wsWyjCeMpL9WR0vypiBl7p51wgsiOzZFPoo5gQoelIqo
+wx75u1z/4y9q7uyLHVObxFH6Zr7SE2o3GJ4c4uLVgloza+4T0LYddcsNkII5UZPE
+mxve5J+CcLN/2NdimHAnJL7knqyWpKEMqdHANbwy/c47VurVaNLMHsKPEH8DT9aJ
+xoZj9ArDPn+0u+UgLpyznhMyZD32zQXbFfHR7XtHjgtrw8BJGbBhkw8uhHESYkWm
+Sb2Q91HG8icCBacCXxcqY7ppKojB/NGDyNUyE8EQFYN3wwXoCvwezWp6Vk5H0pBn
+gfMZGycz5PLuRM1pSM9MIE4CXaKAylKFfbSsqVnkZ4FwqcRamdZUciACA+2TnkNW
+DxVys/uNfl9BLaen3fBRQGo9DeOqu125+SJPFzVIdbhvo2ETLJO9JndlOtxzRXju
+9w6wuw9B5IpaBEXNemMRncNKT4HQCpVlKhnrAipM+pv8xTgfZc3J0Y4/bREc2l7D
+A0iJx4i4VMz4gOQmJlXTBoLA8baSzUA9E8JIROpuY0n7utYW/Zeyb4qC1XHqlO9H
+z1pr0MM2Pjzuj7wsoUoNCnFVEYXnEEMrFdFDmjT35mi91lYCvPvl4k5tZ+cyKjf8
+TyBCrdCq/IkaEwKB8q2qKFyMdXzaumxStGELZA+RvJbcxMI8LXxb9lUtI0r126Fp
+dlfWlHoGmPUjszkz0K2Y0ZH1Dw9XY4HCtreIoRRX6vXlkTs6i5CEsi3flWU9QBVX
+7RfDhW4kjpJFbsXXH9FFcq0q3BmgzuLzxSR15DqNlnTumUn2HyQ2JBiwTzpiy2SI
+oePtZ2SgXMlK5qnOpIuEDV9lIrGQDURxmw==
+-----END ENCRYPTED PRIVATE KEY-----`
 
 var spcContainerTests = []spcTest{
 	{"../testdata/FPS/spc1.bin",
@@ -443,8 +437,8 @@ func TestGenCKC(t *testing.T) {
 	assert := assert.New(t)
 
 	pubKey, _ := cryptos.ParsePublicCertification([]byte(pub))
-	priKey, _ := cryptos.DecryptPriKey([]byte(pri), []byte{})
-	ask, _ := hex.DecodeString("d87ce7a26081de2e8eb8acef3a6dc179")
+	priKey, _ := cryptos.DecryptPriKey([]byte(pri), []byte("axissoft1@"))
+	ask, _ := hex.DecodeString("2c6b3114ca8831cb01fb26a0646f96e8")
 
 	k := &Ksm{
 		Pub: pubKey,
@@ -468,7 +462,7 @@ func TestDebugCKC(t *testing.T) {
 
 func TestParseSPCV1(t *testing.T) {
 	pubKey, _ := cryptos.ParsePublicCertification([]byte(pub))
-	priKey, _ := cryptos.DecryptPriKey([]byte(pri), []byte{})
+	priKey, _ := cryptos.DecryptPriKey([]byte(pri), []byte("axissoft1@"))
 	assert := assert.New(t)
 
 	for _, test := range spcContainerTests {
@@ -495,7 +489,7 @@ func readBin(filePath string) []byte {
 	checkErr(err)
 	defer f.Close()
 
-	spcMessage, err := ioutil.ReadAll(f)
+	spcMessage, err := io.ReadAll(f)
 	checkErr(err)
 
 	return spcMessage

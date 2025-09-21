@@ -11,6 +11,7 @@ import (
 
 const PRIME = uint32(813416437)
 const NB_RD = 16
+
 const APPLE_TESTING_ASk = "d87ce7a26081de2e8eb8acef3a6dc179"
 
 type DFunction struct {
@@ -21,6 +22,7 @@ func (d DFunction) Compute(R2 []byte, ask []byte) ([]byte, error) {
 	if hex.EncodeToString(ask) == APPLE_TESTING_ASk {
 		return hex.DecodeString(APPLE_TESTING_ASk)
 	}
+	print(hex.EncodeToString(ask))
 
 	hashValue, err := d.ComputeHashValue(R2)
 	if err != nil {

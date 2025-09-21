@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/minsoo-gold/fairplay-ksm/cryptos"
 	"github.com/minsoo-gold/fairplay-ksm/ksm"
+	"github.com/minsoo-gold/fairplay-ksm/logger"
 )
 
 type SpcMessage struct {
@@ -136,7 +137,7 @@ func ReadPublicCert() *rsa.PublicKey {
 	if len(pubEnvVar) == 0 {
 		panic("Can't not find FAIRPLAY CERTIFICATION")
 	}
-
+	logger.Printf("FAIRPLAY_CERTIFICATION:%s\n", pubEnvVar)
 	pubCert, err := cryptos.ParsePublicCertification(pubEnvVar)
 	if err != nil {
 		panic(err)
@@ -150,6 +151,7 @@ func ReadPriKey() *rsa.PrivateKey {
 	if len(priEnvVar) == 0 {
 		panic("Can't not find FAIRPLAY PRIVATE KEY")
 	}
+	logger.Printf("FAIRPLAY_PRIVATE_KEY:%s\n", priEnvVar)
 	priKey, err := cryptos.DecryptPriKey(priEnvVar, []byte("axissoft1@"))
 	if err != nil {
 		panic(err)
@@ -162,6 +164,7 @@ func ReadASk() []byte {
 	if len(askEnvVar) == 0 {
 		askEnvVar = "d87ce7a26081de2e8eb8acef3a6dc179" //Apple provided
 	}
+	logger.Printf("FAIRPLAY_APPLICATION_SERVICE_KEY:%s\n", askEnvVar)
 	ask, err := hex.DecodeString(askEnvVar)
 	if err != nil {
 		panic(err)
