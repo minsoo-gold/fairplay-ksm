@@ -58,6 +58,8 @@ Thumbs.db
 *.local.json
 *.secret.*
 config.local.*
+*.pem
+*.b64
 
 # ----------------------------------------
 # 로그 / 캐시
