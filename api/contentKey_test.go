@@ -21,6 +21,7 @@ func TestFirestoreContentKey_RealData(t *testing.T) {
 		t.Fatalf("FetchContentKey failed: %v", err)
 	}
 
+	//kid 사용여부 확인.
 	if len(kidBytes) != 16 {
 		t.Errorf("Expected kid length 16, got %d", len(kidBytes))
 	}
@@ -33,7 +34,7 @@ func TestFirestoreContentKey_RealData(t *testing.T) {
 		t.Errorf("Expected IV length 16, got %d", len(ivBytes))
 	}
 
-	t.Logf("✅ Successfully fetched key and IV for asset: %s", realAssetID)
+	t.Logf("asset: %s", realAssetID)
 	t.Logf("Kid: %x", kidBytes)
 	t.Logf("Key: %x", keyBytes)
 	t.Logf("IV: %x", ivBytes)
@@ -49,7 +50,7 @@ func TestFirestoreContentKey_RealData(t *testing.T) {
 		t.Fatal("Expected non-nil duration")
 	}
 
-	t.Logf("✅ Successfully fetched duration for asset: %s", realAssetID)
+	t.Logf("asset: %s", realAssetID)
 	t.Logf("Lease Duration: %d", duration.LeaseDuration)
 	t.Logf("Rental Duration: %d", duration.RentalDuration)
 }

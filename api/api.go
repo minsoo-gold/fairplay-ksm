@@ -103,6 +103,7 @@ func init() {
 	}
 }
 
+// contentKey.go꺼 사용함. 이건 미사용.
 func getFairplayKeys(ctx context.Context, docID string) (*FairplayKeys, error) {
 	doc, err := firestoreClient.Collection("fairplay").Doc(docID).Get(ctx)
 	if err != nil {
