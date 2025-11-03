@@ -7,85 +7,68 @@ import (
 	"errors"
 	"fmt"
 
-	"cloud.google.com/go/firestore"
 	"github.com/minsoo-gold/fairplay-ksm/ksm"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type FirestoreContentKey struct {
-	client   *firestore.Client
-	tenantID string
+	ctx context.Context
 }
 
 // Firestore 초기화 (main에서 호출)
 // tenantID를 고정해서 이 인스턴스는 특정 테넌트만 다루도록 합니다.
-func NewFirestoreContentKey(ctx context.Context, projectID, tenantID string) (*FirestoreContentKey, error) {
-	client, err := firestore.NewClient(ctx, projectID)
-	if err != nil {
-		return nil, err
-	}
-	return &FirestoreContentKey{client: client, tenantID: tenantID}, nil
+func NewFirestoreContentKey(ctx context.Context) *FirestoreContentKey {
+	return &FirestoreContentKey{ctx: ctx}
 }
 
 // (선택) 종료 시 호출
-func (f *FirestoreContentKey) Close() error {
-	return f.client.Close()
-}
+// func (f *FirestoreContentKey) Close() error {
+// 	return f.client.Close()
+// }
 
 // FetchContentKey: Firestore에서 contentKey, IV 가져오기
 // 경로: tenants/{tenantID}/asset_keys/{assetID}
-func (f *FirestoreContentKey) FetchContentKey(assetID []byte) ([]byte, []byte, error) {
-	ctx := context.Background()
-
-	docRef := f.client.
-		Collection("tenants").Doc(f.tenantID).
-		Collection("asset_keys").Doc(string(assetID))
-
-	doc, err := docRef.Get(ctx)
+func (f *FirestoreContentKey) FetchContentKey(assetID []byte) ([]byte, []byte, []byte, error) {
+	doc, err := firestoreClient.Collection("fairplay").Doc(string(assetID)).Get(f.ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	data := doc.Data()
 
-	keyBytes, err := toBytes(data["contentKey"])
+	//kid 추가
+	kidBytes, err := toBytes(data["kid"])
 	if err != nil {
-		return nil, nil, fmt.Errorf("contentKey decode error: %w", err)
+		return nil, nil, nil, fmt.Errorf("kid decode error: %w", err)
+	}
+	if len(kidBytes) != 16 {
+		return nil, nil, nil, fmt.Errorf("kid length must be 16 bytes, got %d", len(kidBytes))
+	}
+
+	keyBytes, err := toBytes(data["key"])
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("key decode error: %w", err)
 	}
 	if len(keyBytes) != 16 {
-		return nil, nil, fmt.Errorf("contentKey length must be 16 bytes, got %d", len(keyBytes))
+		return nil, nil, nil, fmt.Errorf("key length must be 16 bytes, got %d", len(keyBytes))
 	}
 
 	ivBytes, err := toBytes(data["iv"])
 	if err != nil {
-		return nil, nil, fmt.Errorf("iv decode error: %w", err)
+		return nil, nil, nil, fmt.Errorf("iv decode error: %w", err)
 	}
 	if len(ivBytes) != 16 {
-		return nil, nil, fmt.Errorf("iv length must be 16 bytes, got %d", len(ivBytes))
+		return nil, nil, nil, fmt.Errorf("iv length must be 16 bytes, got %d", len(ivBytes))
 	}
 
-	return keyBytes, ivBytes, nil
+	return kidBytes, keyBytes, ivBytes, nil
 }
 
 // FetchContentKeyDuration: Firestore에서 Lease/RentalDuration 가져오기
 // 경로: tenants/{tenantID}/license_policy/{assetID}
 func (f *FirestoreContentKey) FetchContentKeyDuration(assetID []byte) (*ksm.CkcContentKeyDurationBlock, error) {
-	ctx := context.Background()
-
-	docRef := f.client.
-		Collection("tenants").Doc(f.tenantID).
-		Collection("license_policy").Doc(string(assetID))
-	doc, err := docRef.Get(ctx)
+	doc, err := firestoreClient.Collection("fairplay").Doc(string(assetID)).Get(f.ctx)
 	if err != nil {
-		// 정책 문서가 없다면 0으로 처리 (선택 로직)
-		// firestore.IsNotFound is not available, use codes.NotFound
-		// import "google.golang.org/grpc/status" and "google.golang.org/grpc/codes"
-		if grpcErr, ok := err.(interface{ GRPCStatus() *status.Status }); ok {
-			if grpcErr.GRPCStatus().Code() == codes.NotFound {
-				return ksm.NewCkcContentKeyDurationBlock(0, 0), nil
-			}
-		}
-		return nil, err
+		// 문서가 없거나 필드가 없으면 0으로 처리
+		return ksm.NewCkcContentKeyDurationBlock(0, 0), nil
 	}
 	data := doc.Data()
 

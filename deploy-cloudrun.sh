@@ -11,8 +11,8 @@ gcloud run deploy "$SERVICE" \
   --project "$PROJECT_ID" \
   --region "$REGION" \
   --allow-unauthenticated \
-  --cpu=0.25 \
-  --memory=256Mi \
+  --cpu=1 \
+  --memory=512Mi \
   --min-instances=0 \
   --max-instances=50 \
   --execution-environment gen2 \

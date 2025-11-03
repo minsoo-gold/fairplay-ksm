@@ -120,11 +120,11 @@ func (k *Ksm) GenCKC(playback []byte) ([]byte, error) {
 	logger.Printf("assetID: %v\n", hex.EncodeToString(assetID))
 	logger.Printf("assetID(string): %v\n", string(assetID))
 
-	enCk, contentIv, err := encryptCK(assetTTlv.Value, k.Rck, DecryptedSKR1Payload.SK)
+	kid, enCk, contentIv, err := encryptCK(assetTTlv.Value, k.Rck, DecryptedSKR1Payload.SK)
 	if err != nil {
 		return nil, err
 	}
-	logger.Println("enCK Length ", len(enCk))
+	logger.Println("enCK Length ", kid, len(enCk))
 
 	returnTllvs, err := findReturnRequestBlocks(spcv1)
 	if err != nil {
@@ -281,20 +281,20 @@ func findReturnRequestBlocks(spcv1 *SPCContainer) ([]TLLVBlock, error) {
 	return returnTllvs, nil
 }
 
-func encryptCK(assetID []byte, ck ContentKey, sk []byte) ([]byte, []byte, error) {
-	contentKey, contentIv, err := ck.FetchContentKey(assetID)
+func encryptCK(assetID []byte, ck ContentKey, sk []byte) ([]byte, []byte, []byte, error) {
+	kid, contentKey, contentIv, err := ck.FetchContentKey(assetID) // 3개 리턴
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	var iv []byte
 	iv = make([]byte, len(contentKey))
 
 	//enCk, err := aes.Encrypt(sk, iv, contentKey)
-	logger.Println("encryptCK.", len(sk), len(iv), len(contentKey))
+	logger.Println("encryptCK.", kid, len(sk), len(iv), len(contentKey))
 	enCK, err := cryptos.AESCBCEncrypt(sk, iv, contentKey)
 	logger.Println("encryptCK.", len(enCK))
-	return enCK, contentIv, err
+	return kid, enCK, contentIv, err
 }
 
 // ParseSPCV1 parses playback, public and private key pairs to new a SPCContainer instance.
