@@ -6,6 +6,7 @@ import (
 )
 
 // 단위 테스트
+// https://console.cloud.google.com/firestore/databases/-default-/data/panel?project=fairplaystreaming 콘솔에서 assetID 확인하고
 // realAssetID : 입력해서 실행하면 firestore에서 가져오는지 확인
 func TestFirestoreContentKey_RealData(t *testing.T) {
 	// assetID
